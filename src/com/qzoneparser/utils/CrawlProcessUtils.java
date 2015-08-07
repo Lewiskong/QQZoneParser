@@ -18,13 +18,13 @@ import com.qzoneparser.bean.Message;
 import com.qzoneparser.config.Constants;
 
 public class CrawlProcessUtils {
-	public ArrayList<Message> getCurrentPageMsgs(int startPage) throws Exception{
+	public static ArrayList<Message> getCurrentPageMsgs(int startPage) throws Exception {
 		StringBuilder url=new StringBuilder();
 		url.append(Constants.PREFIX_URL);
 		url.append("uin=847496788&hostUin=");
 		url.append(Constants.HOST_UIN);
 		url.append("&start=");
-		url.append(startPage);
+		url.append(startPage*Constants.NUM_PER_PAGE);
 		url.append("&s=0.530155199393928&format=jsonp&num=");
 		url.append(Constants.NUM_PER_PAGE);
 		url.append("&inCharset=utf-8&outCharset=utf-8&g_tk=636777834");
@@ -40,8 +40,24 @@ public class CrawlProcessUtils {
 		String content=str.substring(0, str.length()-5).substring(str.indexOf("commentList")+"commentList\":".length());
 		ArrayList<Message> msgs=new ArrayList<Message>();
 		ObjectMapper map=new ObjectMapper();
-		msgs=map.readValue(content, ArrayList.class);
+		try{
+			msgs=map.readValue(content, ArrayList.class);
+		}catch(Exception e){
+			System.out.println("亲，该QQ空间不对外开放，请先以可访问好友身份登陆~");
+			return null;
+		}
 		EntityUtils.consume(entity);
+		return msgs;
+	}
+	
+	public static ArrayList<Message> getAllMsgs() throws Exception{
+		ArrayList<Message> msgs=new ArrayList<Message>();
+		for (int page=0;;page++){
+			ArrayList<Message> temp=getCurrentPageMsgs(page);
+			if (temp==null) {msgs=null;break;}
+			else if (temp.size()==0) break;
+			else msgs.addAll(temp);
+		}
 		return msgs;
 	}
 }
